@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Partículas Románticas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html, body {
   margin: 0;
@@ -10,15 +11,21 @@ html, body {
   background: black;
   overflow: hidden;
   font-family: Arial, sans-serif;
+  width: 100%;
+  height: 100%;
 }
-canvas { display: block; }
+canvas { 
+  display: block; 
+  width: 100%;
+  height: 100%;
+}
 #startBtn {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1);
-  padding: 12px 30px;
-  font-size: 20px;
+  padding: 12px 25px;
+  font-size: 5vw;
   border-radius: 30px;
   border: none;
   background: #ff4d6d;
@@ -26,25 +33,26 @@ canvas { display: block; }
   cursor: pointer;
   z-index: 10;
   display: none;
+  text-align: center;
 }
 </style>
 </head>
 <body>
 
-<!-- Botón INICIAR -->
 <button id="startBtn">INICIAR</button>
-
-<!-- Canvas de animación -->
 <canvas id="canvas"></canvas>
-
-<!-- Música de fondo -->
 <audio id="bgMusic" src="un minuto.mp3" loop></audio>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
 /* ================= VARIABLES ================= */
 const phrases = [
@@ -123,7 +131,7 @@ function initParticles(count=2000){
 function getTextTargets(text){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle="white";
-  ctx.font="bold 100px Arial";
+  ctx.font=`bold ${Math.floor(canvas.width/8)}px Arial`;
   ctx.textAlign="center";
   ctx.textBaseline="middle";
   ctx.fillText(text,canvas.width/2,canvas.height/2);
@@ -139,6 +147,7 @@ function getTextTargets(text){
   }
 }
 
+/* ================= CORAZON ================= */
 function getHeartTargets(scale=1){
   targets=[];
   const cx=canvas.width/2;
@@ -150,6 +159,7 @@ function getHeartTargets(scale=1){
   }
 }
 
+/* ================= ASIGNAR ================= */
 function assignTargets(color){
   for(let i=0;i<particles.length;i++){
     const t=targets[i%targets.length];
@@ -198,9 +208,9 @@ document.getElementById("startBtn").addEventListener("click",()=>{
   animate();
   nextPhrase();
 
-  // Reproducir música al iniciar
+  // Música al iniciar
   const music = document.getElementById("bgMusic");
-  music.play().catch(()=>{ /* si el navegador bloquea autoplay */ });
+  music.play().catch(()=>{});
 });
 
 /* ================= INICIO ================= */
@@ -208,17 +218,16 @@ initStars();
 
 // Mostrar botón INICIAR después de 0.5s con pulso
 setTimeout(()=>{
-  document.getElementById("startBtn").style.display="block";
+  const btn = document.getElementById("startBtn");
+  btn.style.display="block";
 
-  // Pulso del botón
   let pulse = 1;
   setInterval(()=>{
     pulse = 1 + Math.sin(Date.now()*0.005)*0.05;
-    document.getElementById("startBtn").style.transform = `translate(-50%,-50%) scale(${pulse})`;
+    btn.style.transform = `translate(-50%, -50%) scale(${pulse})`;
   },16);
 
 },500);
-
 </script>
 </body>
 </html>
