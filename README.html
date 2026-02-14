@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Partículas Románticas</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+canvas { display: block; }
+#startBtn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  padding: 12px 30px;
+  font-size: 20px;
+  border-radius: 30px;
+  border: none;
+  background: #ff4d6d;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Botón INICIAR -->
+<button id="startBtn">INICIAR</button>
+
+<!-- Canvas de animación -->
+<canvas id="canvas"></canvas>
+
+<!-- Música de fondo -->
+<audio id="bgMusic" src="un minuto.mp3" loop></audio>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+/* ================= VARIABLES ================= */
+const phrases = [
+  "Nayely Lobos","eres alguien","muy especial",
+  "el verdadero","quien como vos","gracias",
+  "por llegar","a mi","vida",
+  "MALDITA LOCA","TE QUIERO MUCHO"
+];
+
+let phraseIndex = 0;
+let particles = [];
+let targets = [];
+let stars = [];
+let heartbeat = 0;
+let showHeart = false;
+
+/* ================= ESTRELLAS ================= */
+function initStars(count=150){
+  stars=[];
+  for(let i=0;i<count;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      size:Math.random()*2
+    });
+  }
+}
+
+function drawStars(){
+  ctx.fillStyle="white";
+  for(let s of stars){
+    ctx.globalAlpha=0.5+Math.sin(Date.now()*0.002+s.x)*0.5;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ================= PARTICULAS ================= */
+class Particle{
+  constructor(x,y,color="white"){
+    this.x = x;
+    this.y = y;
+    this.tx = x;
+    this.ty = y;
+    this.color = color;
+    this.active = true;
+    this.size = 2;
+  }
+  update(){
+    if(!this.active) return;
+    this.x += (this.tx - this.x)*0.08;
+    this.y += (this.ty - this.y)*0.08;
+  }
+  draw(){
+    if(!this.active) return;
+    ctx.shadowBlur=15;
+    ctx.shadowColor=this.color;
+    ctx.fillStyle=this.color;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+}
+
+function initParticles(count=2000){
+  particles=[];
+  for(let i=0;i<count;i++){
+    particles.push(new Particle(Math.random()*canvas.width,Math.random()*canvas.height));
+  }
+}
+
+/* ================= TEXTO ================= */
+function getTextTargets(text){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="white";
+  ctx.font="bold 100px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(text,canvas.width/2,canvas.height/2);
+
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  targets=[];
+
+  for(let y=0;y<canvas.height;y+=6){
+    for(let x=0;x<canvas.width;x+=6){
+      const i=(y*canvas.width+x)*4;
+      if(data[i+3]>150) targets.push({x,y});
+    }
+  }
+}
+
+function getHeartTargets(scale=1){
+  targets=[];
+  const cx=canvas.width/2;
+  const cy=canvas.height/2;
+  for(let t=0;t<Math.PI*2;t+=0.01){
+    const x=16*Math.pow(Math.sin(t),3);
+    const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    targets.push({x:cx+x*15*scale, y:cy-y*15*scale});
+  }
+}
+
+function assignTargets(color){
+  for(let i=0;i<particles.length;i++){
+    const t=targets[i%targets.length];
+    particles[i].tx = t.x;
+    particles[i].ty = t.y;
+    particles[i].color = color;
+  }
+}
+
+/* ================= ANIMACION ================= */
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawStars();
+
+  if(showHeart){
+    heartbeat += 0.08;
+    const scale = 1 + Math.sin(heartbeat)*0.08;
+    getHeartTargets(scale);
+    assignTargets("#ff2d2d");
+  }
+
+  for(const p of particles){
+    p.update();
+    p.draw();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* ================= FRASES ================= */
+function nextPhrase(){
+  if(phraseIndex<phrases.length){
+    getTextTargets(phrases[phraseIndex]);
+    assignTargets("white");
+    phraseIndex++;
+    setTimeout(nextPhrase,2200);
+  }else{
+    showHeart=true;
+  }
+}
+
+/* ================= BOTON ================= */
+document.getElementById("startBtn").addEventListener("click",()=>{
+  document.getElementById("startBtn").style.display="none";
+  initParticles();
+  animate();
+  nextPhrase();
+
+  // Reproducir música al iniciar
+  const music = document.getElementById("bgMusic");
+  music.play().catch(()=>{ /* si el navegador bloquea autoplay */ });
+});
+
+/* ================= INICIO ================= */
+initStars();
+
+// Mostrar botón INICIAR después de 0.5s con pulso
+setTimeout(()=>{
+  document.getElementById("startBtn").style.display="block";
+
+  // Pulso del botón
+  let pulse = 1;
+  setInterval(()=>{
+    pulse = 1 + Math.sin(Date.now()*0.005)*0.05;
+    document.getElementById("startBtn").style.transform = `translate(-50%,-50%) scale(${pulse})`;
+  },16);
+
+},500);
+
+</script>
+</body>
+</html>
